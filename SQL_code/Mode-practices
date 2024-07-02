@@ -1,0 +1,399 @@
+#####################################################  My Mode problem practices  ##################################################
+
+SELECT *
+FROM tutorial.us_housing_units
+LIMIT 15
+
+
+SELECT *
+FROM tutorial.us_housing_units
+WHERE south <= 20
+
+SELECT year,
+       month,
+       west/(west + south + midwest + northeast)*100 AS west_pct,
+       south/(west + south + midwest + northeast)*100 AS south_pct,
+       midwest/(west + south + midwest + northeast)*100 AS midwest_pct,
+       northeast/(west + south + midwest + northeast)*100 AS northeast_pct
+FROM tutorial.us_housing_units
+WHERE year >= 2000
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE "group" ilike '%ludacris%'
+
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE "group" IN ('M.C. Hammer', 'Hammer', 'Elvis Presley')
+
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE year BETWEEN 1985 AND 1990
+
+SELECT year,
+       month,
+       MAX(high) AS month_high
+FROM tutorial.aapl_historical_stock_price
+GROUP BY year, month
+HAVING MAX(high) > 400
+ORDER BY year, month
+
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE song_name IS NULL
+
+
+SELECT  *
+FROM tutorial.billboard_top_100_year_end
+WHERE year = 2012  AND year_rank <= 10  AND "group_name" ILIKE '%feat%'
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE song_name LIKE '%California%' 
+                               AND (year BETWEEN 1970 AND 1979 OR year BETWEEN 1990 AND 1999)
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE year = 2010
+ORDER BY year_rank, artist
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE year = 2012
+ORDER BY song_name DESC
+
+
+SELECT *
+FROM tutorial.billboard_top_100_year_end
+WHERE artist ILIKE '%t-Pain%'
+order by year_rank DESC
+
+SELECT * 
+FROM tutorial.billboard_top_100_year_end
+WHERE year IN  (1993,2003,2013) AND year_rank BETWEEN  10 AND 20
+ORDER BY year , year_rank
+
+
+SELECT COUNT(*) AS count_all , COUNT(date) AS count_of_date, COUNT(year) AS count_of_year, COUNT(month) AS count_of_month , COUNT(open) AS count_of_open, 
+COUNT(high) AS count_of_high, COUNT(low) AS count_of_low, COUNT(close) AS count_of_close, COUNT(volume) AS count_of_volume, COUNT(id) AS count_of_id
+FROM tutorial.aapl_historical_stock_price
+
+
+SELECT (SUM(open)/ COUNT(open)) AS opennig_average
+FROM tutorial.aapl_historical_stock_price
+
+SELECT MAX(close - open)
+FROM tutorial.aapl_historical_stock_price
+
+SELECT AVG(volume) AS average_volume
+FROM tutorial.aapl_historical_stock_price
+
+
+SELECT year, AVG(close- open) AS daily_change
+FROM tutorial.aapl_historical_stock_price
+group by year
+ORDER by year
+
+
+SELECT year,month, MIN(low), MAX(high)
+FROM tutorial.aapl_historical_stock_price
+GROUP by 1,2
+ORDER by 1,2
+
+
+SELECT player_name,state,
+       CASE WHEN state = 'CA' THEN 'yes'
+       ELSE 'no' 
+       END AS from_california
+FROM benn.college_football_players
+ORDER BY 3 DESC
+
+
+SELECT player_name,height,
+       CASE WHEN height > 74 THEN 'over 74'
+            WHEN height > 72 AND height <= 74 THEN '73-74'
+            WHEN height > 70 AND height <= 72 THEN '71-72'
+            ELSE 'under 70' END AS height_group
+FROM benn.college_football_players
+
+
+SELECT CASE WHEN state IN ('CA', 'OR', 'WA') THEN 'West Coast'
+            WHEN state = 'TX' THEN 'Texas'
+            ELSE 'Other' END AS arbitrary_regional_designation,
+            COUNT(1) AS players
+FROM benn.college_football_players
+WHERE weight >= 300
+GROUP BY 1
+order by arbitrary_regional_designation
+
+
+SELECT *,
+       CASE WHEN year IN ('JR', 'SR') THEN player_name 
+            ELSE NULL 
+       END AS upperclass_player_name
+FROM benn.college_football_players
+
+
+SELECT SUM(CASE WHEN year IN ('FR','SO') THEN weight END ) AS lower_class_weight,
+         SUM(CASE WHEN year IN ('JR','SR') THEN weight END ) AS upper_class_weight
+FROM benn.college_football_players
+WHERE state = 'CA'
+
+
+SELECT CASE WHEN school_name < 'n' THEN 'A-M'
+            WHEN school_name >= 'n' THEN 'N-Z'
+            ELSE NULL END AS school_name_group,
+       COUNT(1) AS players
+ FROM benn.college_football_players
+ GROUP BY 1
+
+
+SELECT year , count(DISTINCT month)
+  FROM tutorial.aapl_historical_stock_price
+  GROUP by year 
+  order by year
+
+
+SELECT players.player_name,
+       players.school_name,
+       teams.conference
+FROM benn.college_football_players players
+  JOIN benn.college_football_teams teams
+    ON teams.school_name = players.school_name
+WHERE teams.division = 'FBS (Division I-A Teams)'
+
+
+
+SELECT COUNT(companies.permalink) AS companies_rowcount,
+       COUNT(acquisitions.company_permalink) AS acquisitions_rowcount
+FROM tutorial.crunchbase_companies companies
+  JOIN tutorial.crunchbase_acquisitions acquisitions
+  ON companies.permalink = acquisitions.company_permalink
+
+
+SELECT COUNT(companies.permalink) AS companies_rowcount,
+       COUNT(acquisitions.company_permalink) AS acquisitions_rowcount
+FROM tutorial.crunchbase_companies companies
+  LEFT JOIN tutorial.crunchbase_acquisitions acquisitions
+  ON companies.permalink = acquisitions.company_permalink
+
+
+
+SELECT companies.state_code,
+       COUNT(DISTINCT companies.permalink) AS unique_companies,
+       COUNT(DISTINCT acquisitions.company_permalink) AS unique_companies_acquired
+FROM tutorial.crunchbase_companies companies
+  LEFT JOIN tutorial.crunchbase_acquisitions acquisitions
+  ON companies.permalink = acquisitions.company_permalink
+WHERE companies.state_code IS NOT NULL
+GROUP BY 1
+ORDER BY 3 DESC
+
+
+SELECT companies.state_code,
+       COUNT(DISTINCT companies.permalink) AS unique_companies,
+       COUNT(DISTINCT acquisitions.company_permalink) AS acquired_companies
+FROM tutorial.crunchbase_acquisitions acquisitions
+ RIGHT JOIN tutorial.crunchbase_companies companies
+    ON companies.permalink = acquisitions.company_permalink
+WHERE companies.state_code IS NOT NULL
+GROUP BY 1
+ORDER BY 3 DESC
+
+
+SELECT COUNT(CASE WHEN companies.permalink IS NOT NULL AND investments.company_permalink IS NULL THEN companies.permalink ELSE NULL END) AS companies_only,
+       COUNT(CASE WHEN companies.permalink IS NOT NULL AND investments.company_permalink IS NOT NULL THEN companies.permalink ELSE NULL END) AS both_tables,
+       COUNT(CASE WHEN companies.permalink IS NULL AND investments.company_permalink IS NOT NULL THEN investments.company_permalink ELSE NULL END) AS investments_only
+FROM tutorial.crunchbase_companies companies
+     FULL JOIN tutorial.crunchbase_investments_part1 investments
+       ON companies.permalink = investments.company_permalink
+
+
+SELECT company_permalink,
+       company_name,
+       investor_name
+FROM tutorial.crunchbase_investments_part1
+WHERE company_name ILIKE 'T%'
+ 
+UNION ALL
+
+SELECT company_permalink,
+       company_name,
+       investor_name
+FROM tutorial.crunchbase_investments_part2
+WHERE company_name ILIKE 'M%'
+
+
+SELECT CAST(funding_total_usd AS varchar) AS funding_total_usd_string,
+       founded_at_clean::varchar AS founded_at_string
+FROM tutorial.crunchbase_companies_clean_date
+
+
+SELECT companies.permalink,
+       companies.founded_at_clean,
+       companies.founded_at_clean::timestamp +
+         INTERVAL '1 week' AS plus_one_week
+FROM tutorial.crunchbase_companies_clean_date companies
+WHERE founded_at_clean IS NOT NULL
+
+
+SELECT companies.permalink,
+       companies.founded_at_clean,
+       NOW() - companies.founded_at_clean::timestamp AS founded_time_ago
+FROM tutorial.crunchbase_companies_clean_date companies
+WHERE founded_at_clean IS NOT NULL
+
+
+
+SELECT companies.category_code,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '3 years'
+       THEN 1 ELSE NULL END) AS acquired_3_yrs,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '5 years'
+       THEN 1 ELSE NULL END) AS acquired_5_yrs,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '10 years'
+       THEN 1 ELSE NULL END) AS acquired_10_yrs,
+       COUNT(1) AS total
+  FROM tutorial.crunchbase_companies_clean_date companies
+  JOIN tutorial.crunchbase_acquisitions_clean_date acquisitions
+    ON acquisitions.company_permalink = companies.permalink
+ WHERE founded_at_clean IS NOT NULL
+ GROUP BY 1
+ ORDER BY 5 DESC
+
+
+SELECT incidnt_num,date,
+       LEFT(date, 10) AS cleaned_date,
+       RIGHT(date, LENGTH(date) - 11) AS cleaned_time
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT location,
+       -----leading
+       -----trailing
+       TRIM(both '()' FROM location)
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       descript,
+       POSITION('A' IN descript) AS a_position
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       descript,
+       STRPOS(descript, 'A') AS a_position
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       date,
+       SUBSTR(date, 4, 2) AS day
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       day_of_week,
+       LEFT(date, 10) AS cleaned_date,
+       CONCAT(day_of_week, ', ', LEFT(date, 10)) AS day_and_date
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       day_of_week,
+       LEFT(date, 10) AS cleaned_date,
+       day_of_week || ', ' || LEFT(date, 10) AS day_and_date
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+
+SELECT incidnt_num,
+       address,
+       UPPER(address) AS address_upper,
+       LOWER(address) AS address_lower
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT incidnt_num,
+       date,
+       (SUBSTR(date, 7, 4) || '-' || LEFT(date, 2) ||
+        '-' || SUBSTR(date, 4, 2))::date AS cleaned_date
+FROM tutorial.sf_crime_incidents_2014_01
+
+
+SELECT cleaned_date,
+       EXTRACT('year'   FROM cleaned_date) AS year,
+       EXTRACT('month'  FROM cleaned_date) AS month,
+       EXTRACT('day'    FROM cleaned_date) AS day,
+       EXTRACT('hour'   FROM cleaned_date) AS hour,
+       EXTRACT('minute' FROM cleaned_date) AS minute,
+       EXTRACT('second' FROM cleaned_date) AS second,
+       EXTRACT('decade' FROM cleaned_date) AS decade,
+       EXTRACT('dow'    FROM cleaned_date) AS day_of_week
+FROM tutorial.sf_crime_incidents_cleandate
+
+
+
+SELECT CURRENT_DATE AS date,
+       CURRENT_TIME AS time,
+       CURRENT_TIMESTAMP AS timestamp,
+       LOCALTIME AS localtime,
+       LOCALTIMESTAMP AS localtimestamp,
+       NOW() AS now
+
+
+SELECT CURRENT_TIME AS time,
+       CURRENT_TIME AT TIME ZONE 'PST' AS time_pst
+
+
+SELECT incidnt_num,
+       descript,
+       COALESCE(descript, 'No Description')
+FROM tutorial.sf_crime_incidents_cleandate
+ORDER BY descript DESC
+
+
+SELECT LEFT(sub.date, 2) AS cleaned_month,
+       sub.day_of_week,
+       AVG(sub.incidents) AS average_incidents
+FROM (
+        SELECT day_of_week,
+               date,
+               COUNT(incidnt_num) AS incidents
+        FROM tutorial.sf_crime_incidents_2014_01
+        GROUP BY 1,2
+       ) sub
+ GROUP BY 1,2
+ ORDER BY 1,2
+
+
+
+SELECT *
+FROM tutorial.sf_crime_incidents_2014_01
+WHERE Date IN (SELECT date
+               FROM tutorial.sf_crime_incidents_2014_01
+               ORDER BY date
+               LIMIT 5
+              )
+
+
+SELECT COALESCE(acquisitions.month, investments.month) AS month,
+       acquisitions.companies_acquired,
+       investments.companies_rec_investment
+FROM (
+        SELECT acquired_month AS month,
+               COUNT(DISTINCT company_permalink) AS companies_acquired
+        FROM tutorial.crunchbase_acquisitions
+        GROUP BY 1
+       ) acquisitions
+  FULL JOIN (
+        SELECT funded_month AS month,
+               COUNT(DISTINCT company_permalink) AS companies_rec_investment
+        FROM tutorial.crunchbase_investments
+        GROUP BY 1
+       )investments
+    ON acquisitions.month = investments.month
+ORDER BY 1 DESC
