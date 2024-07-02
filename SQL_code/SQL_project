@@ -1,0 +1,197 @@
+#######################################################  Here is my SQL projects and practices  #############################################################
+
+#################################################################### My SQL Project #######################################################################
+
+--select all columns of covidDeaths table which is order by location and date column of table in ASC order
+SELECT  *
+FROM dbo.CovidDeaths
+ORDER BY location, date ASC -- DESC
+
+
+--we need this when we want to change the type of data in one column 
+--here date column from string to date in CovidDeaths table
+ALTER TABLE CovidDeaths
+ALTER COLUMN date date;
+
+ALTER TABLE CovidDeaths
+ALTER COLUMN total_deaths DECIMAL;
+
+ALTER TABLE CovidDeaths
+ALTER COLUMN total_cases DECIMAL;
+
+ALTER TABLE CovidDeaths
+ALTER COLUMN new_cases INT;
+
+ALTER TABLE CovidDeaths
+ALTER COLUMN population BIGINT;--larger than INT
+
+
+--select all columns of covidVaccination table and show top 10 row of result which is order by 4th column of table in ASC order
+SELECT TOP 10 *
+FROM dbo.CovidVaccinations
+ORDER BY 4 
+
+
+--replace all empty value in table with NULL in some specific columns 
+UPDATE dbo.CovidDeaths
+SET total_cases = NULL
+WHERE total_cases = '';
+
+UPDATE dbo.CovidDeaths
+SET total_deaths = NULL
+WHERE total_deaths = '';
+
+UPDATE dbo.CovidDeaths
+SET location = NULL
+WHERE location = '';
+
+UPDATE dbo.CovidDeaths
+SET continent = NULL
+WHERE continent = '';
+
+UPDATE dbo.CovidDeaths
+SET date = NULL
+WHERE date = '';
+
+UPDATE dbo.CovidDeaths
+SET new_cases = NULL
+WHERE new_cases = '';
+
+UPDATE dbo.CovidDeaths
+SET population = NULL
+WHERE population = '';
+
+
+--select location, date, total cases, new cases, total deaths and population from covidDeaths table order by location and date in ASC order
+SELECT location, date, total_cases, new_cases, total_deaths, population
+FROM dbo.CovidDeaths
+ORDER BY location, date ASC
+
+
+--extract MONTH , DAY AND YEAR FROM DATE COLUMN 
+SELECT date, DAY(date) AS extracted_day , DATENAME(MONTH, date) AS month_name, YEAR(date) AS extracted_year
+FROM dbo.CovidDeaths
+
+
+--selecting location,date,percetage_death(total_deaths/total_cases),percentage_illness_population(total_cases/ population),
+--percentage_death_population(total_deaths/population),percentage_newCase(new_cases/total_cases)
+--from covidDeath table which are in united state in year of 2020 after month of March 
+------------- Shows what percentage of population infected with Covid
+------------- Shows likelihood of dying if you contract covid in your country
+SELECT location, date,CAST(ROUND((CAST(total_deaths AS DECIMAL) / total_cases) * 100,2)AS DECIMAL(10, 2)) AS percentage_death,
+    CAST(ROUND((CAST(total_cases AS DECIMAL) / population) *100,2)AS DECIMAL(10, 2)) AS percentage_illness_population,
+	CAST(ROUND((CAST(total_deaths AS DECIMAL) / population) *100,2)AS DECIMAL(10, 2))AS percentage_death_population,
+	CAST(ROUND((CAST(new_cases AS DECIMAL) / total_cases) * 100,2)AS DECIMAL(10, 2)) AS percentage_newCase
+FROM dbo.CovidDeaths
+WHERE location like '%states' AND YEAR(date) = 2020 AND MONTH(date) >3
+ORDER BY location, date ASC
+
+
+-------------- Countries with Highest Infection Rate compared to Population
+Select continent , Location, Population, MAX(total_cases) as HighestInfectionCount,  MAX(CAST(ROUND((CAST(total_cases AS DECIMAL) / population) *100,2)AS DECIMAL(10, 2))) as PercentPopulationInfected
+From PortfolioProject..CovidDeaths
+Where  YEAR(date) <> 2023 AND YEAR(date) <> 2022 AND YEAR(date) <> 2021 --------------- YEAR(date) = 2020
+Group by continent, Location, Population
+order by PercentPopulationInfected desc
+
+
+-------------- Countries with Highest Death Count per Population
+Select continent , Location, Population, MAX(total_deaths) as HighestDeathCount,  MAX(CAST(ROUND((CAST(total_deaths AS DECIMAL) / population) *100,2)AS DECIMAL(10, 2))) as PercentPopulationDied
+From PortfolioProject..CovidDeaths
+Where  continent is not NULL ---YEAR(date) <> 2023 AND YEAR(date) <> 2022 AND YEAR(date) <> 2021 AND  --------------- YEAR(date) = 2020
+Group by continent, Location, Population
+order by HighestDeathCount desc
+
+---------------The country and continent highest death count
+SELECT DISTINCT TOP 10 location, MAX(total_deaths) as HighestDeathCount
+FROM dbo.CovidDeaths
+WHERE continent is NOT NULL
+group BY location 
+ORDER BY HighestDeathCount DESC
+
+SELECT DISTINCT TOP 10 continent,MAX(total_deaths) as HighestDeathCount
+FROM dbo.CovidDeaths
+WHERE continent is not NULL
+group BY continent
+ORDER BY HighestDeathCount DESC
+
+-- GLOBAL NUMBERS
+
+Select date , SUM(cast(new_cases as int)) as total_cases, SUM(convert(INT , new_deaths)) as total_deaths --, SUM(cast(new_deaths as INT))/SUM(cast(New_Cases as INT)) as DeathPercentage
+From dbo.CovidDeaths
+where continent is not null
+Group By date
+order by total_deaths DESC
+
+
+-- Total Population vs Vaccinations
+-- Shows Percentage of Population that has recieved at least one Covid Vaccine
+
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(CONVERT(int,vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
+--, (RollingPeopleVaccinated/population)*100
+From PortfolioProject..CovidDeaths dea
+Join PortfolioProject..CovidVaccinations vac
+	On dea.location = vac.location
+	and dea.date = vac.date
+where dea.continent is not null 
+order by 2,3
+
+
+-- Using CTE to perform Calculation on Partition By in previous query
+
+With PopvsVac (Continent, Location, Date, Population, New_Vaccinations, RollingPeopleVaccinated)
+as
+(
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(CONVERT(int,vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
+--, (RollingPeopleVaccinated/population)*100
+From PortfolioProject..CovidDeaths dea
+Join PortfolioProject..CovidVaccinations vac
+	On dea.location = vac.location
+	and dea.date = vac.date
+where dea.continent is not null 
+--order by 2,3
+)
+Select *, (RollingPeopleVaccinated/Population)*100
+From PopvsVac
+
+
+
+-- Using Temp Table to perform Calculation on Partition By in previous query
+
+DROP Table if exists #PercentPopulationVaccinated
+Create Table #PercentPopulationVaccinated
+(
+Continent nvarchar(255),
+Location nvarchar(255),
+Date datetime,
+Population numeric,
+New_vaccinations numeric,
+RollingPeopleVaccinated numeric
+)
+
+Insert into #PercentPopulationVaccinated
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(CONVERT(int,vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
+--, (RollingPeopleVaccinated/population)*100
+From PortfolioProject..CovidDeaths dea
+Join PortfolioProject..CovidVaccinations vac
+	On dea.location = vac.location
+	and dea.date = vac.date
+--where dea.continent is not null 
+--order by 2,3
+
+Select *, (RollingPeopleVaccinated/Population)*100
+From #PercentPopulationVaccinated
+
+
+Create View  PercentPopulationVaccinated  as
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(CONVERT(int,vac.new_vaccinations)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleVaccinated
+--, (RollingPeopleVaccinated/population)*100
+From PortfolioProject..CovidDeaths dea
+Join PortfolioProject..CovidVaccinations vac
+	On dea.location = vac.location
+	and dea.date = vac.date
+where dea.continent is not null 
